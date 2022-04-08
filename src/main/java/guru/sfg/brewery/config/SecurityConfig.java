@@ -1,20 +1,35 @@
 package guru.sfg.brewery.config;
 
+import guru.sfg.brewery.security.RestHeaderAuthenticationFilter;
+import guru.sfg.brewery.security.RestUrlAuthenticationFilter;
 import guru.sfg.brewery.security.SfgPasswordEncodingFactories;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    public RestHeaderAuthenticationFilter restHeaderAuthenticationFilter(AuthenticationManager authenticationManager) {
+        RestHeaderAuthenticationFilter filter = new RestHeaderAuthenticationFilter(new AntPathRequestMatcher("/api/**"));
+        filter.setAuthenticationManager(authenticationManager);
+        return filter;
+    }
+
+    public RestUrlAuthenticationFilter restUrlAuthenticationFilter(AuthenticationManager authenticationManager) {
+        RestUrlAuthenticationFilter filter = new RestUrlAuthenticationFilter(new AntPathRequestMatcher("/api/**"));
+        filter.setAuthenticationManager(authenticationManager);
+        return filter;
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -23,9 +38,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        http.addFilterBefore(restHeaderAuthenticationFilter(authenticationManager()),
+                        UsernamePasswordAuthenticationFilter.class)
+                .csrf().disable();
+
+        http.addFilterBefore(restUrlAuthenticationFilter(authenticationManager()),
+                UsernamePasswordAuthenticationFilter.class);
+
         http
                 .authorizeRequests(authorise -> authorise
-                        .antMatchers("/", "/login" ,"/webjars/**", "/resources/**").permitAll()
+                        .antMatchers("/", "/login", "/webjars/**", "/resources/**").permitAll()
                         .antMatchers("/beers/find", "/beers*").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/v1/beer/**").permitAll()
                         .mvcMatchers(HttpMethod.GET, "/api/v1/beerUpc/{upc}").permitAll())
@@ -71,7 +93,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .roles("USER")
                 .and()
                 .withUser("scott")
-                .password("{bcrypt15}$2a$15$OYsmDVOmBVq54aIhcu.Em.4CgeaorDGHMDGAVDYtFroypgNHWDhsy")
+                .password("{bcrypt12}$2a$15$OYsmDVOmBVq54aIhcu.Em.4CgeaorDGHMDGAVDYtFroypgNHWDhsy")
                 .roles("CUSTOMER");
     }
 }

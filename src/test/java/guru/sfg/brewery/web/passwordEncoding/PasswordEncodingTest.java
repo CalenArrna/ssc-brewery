@@ -29,8 +29,8 @@ public class PasswordEncodingTest {
 
     @Test
     void passwordHashingWithCustomBcrypt15() {
-        PasswordEncoder bCrypt15 = new BCryptPasswordEncoder(15);
-        System.out.println(bCrypt15.encode("tiger"));
+        PasswordEncoder bCrypt12 = new BCryptPasswordEncoder(12);
+        System.out.println(bCrypt12.encode("tiger"));
     }
 
     @Test
